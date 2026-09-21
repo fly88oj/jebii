@@ -1,0 +1,13 @@
+node_modules/
+out/
+release/
+dist-web/
+smoke-shots/
+.scratch/
+.electron-cache/
+app/
+*.tsbuildinfo
+*.log
+.mimosa/
+soulchat-data/
+src/config.local.js

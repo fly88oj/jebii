@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title data-i18n="doc.title">Jebii — SoulLink × JEV Live2D Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self' data:"
+    />
+    <link rel="manifest" href="/app/manifest.webmanifest" />
+    <meta name="theme-color" content="#0b0d1a" />
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./overrides.css" />
+  </head>
+  <body>
+    <div id="stage"></div>
+
+    <header id="topbar">
+      <div id="title">
+        <span class="logo">Jebii</span>
+        <span id="product-subtitle">SoulLink × JEV</span>
+        <span id="char-name">月見天音</span>
+      </div>
+      <div id="emotion-chip" class="chip hidden"></div>
+      <button id="btn-settings" class="ghost small" type="button" data-i18n="settings.title">设置</button>
+    </header>
+
+    <div id="mobile-tabs">
+      <button id="tab-logs" class="mtab" type="button" data-i18n="tab.logs.initial">LLM 0 / JEV 0</button>
+      <button id="tab-mood" class="mtab" type="button" data-i18n="tab.mood.initial">心情 —</button>
+    </div>
+
+    <div id="right-col">
+      <section id="jev-panel">
+        <div class="jev-head"><span data-i18n="jev.head">Jev 情绪概率</span><span id="jev-model-tag"></span></div>
+        <div id="jev-bars"><div class="jev-empty" data-i18n="jev.empty">等待第一次决策…</div></div>
+        <div id="jev-timeline" class="jev-timeline"></div>
+      </section>
+
+      <section id="chat-panel">
+        <div id="messages"></div>
+        <div id="composer">
+          <textarea id="input" rows="1" placeholder="和角色聊点什么…" data-i18n-ph="input.placeholder"></textarea>
+          <div class="composer-actions">
+            <button id="btn-mic" class="ghost hidden" type="button" data-i18n-title="btn.mic">🎤</button>
+            <button id="btn-clear" class="ghost danger" title="清空聊天记录，重新开始" data-i18n="btn.clear" data-i18n-title="btn.clear.title">清空</button>
+            <span class="spacer"></span>
+            <button id="btn-stop" class="ghost hidden" data-i18n="btn.stop">■ 停止</button>
+            <button id="btn-send" class="primary" data-i18n="btn.send">发送</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section id="traffic-panel">
+      <div class="traffic-head">
+        <div class="traffic-title-row">
+          <span data-i18n="traffic.head">通信日志 · LLM / JEV / TTS 请求响应</span>
+          <button id="btn-traffic-clear" class="ghost small" data-i18n="btn.clear">清空</button>
+        </div>
+        <div id="traffic-filter" role="group">
+          <button class="tf-btn active" data-f="all" type="button" data-i18n="traffic.all">全部</button>
+          <button class="tf-btn" data-f="llm" type="button">LLM</button>
+          <button class="tf-btn" data-f="jev" type="button">JEV</button>
+          <button class="tf-btn" data-f="tts" type="button">TTS</button>
+          <button class="tf-btn" data-f="asr" type="button">ASR</button>
+        </div>
+      </div>
+      <div id="traffic-list"></div>
+    </section>
+
+    <div id="settings-overlay" class="dialog-overlay hidden">
+      <div class="dialog-card" role="dialog" aria-modal="true">
+        <h2 data-i18n="settings.title">设置</h2>
+        <fieldset>
+          <legend data-i18n="settings.channels">聊天通道</legend>
+          <label><span data-i18n="settings.llmBase">LLM base URL</span><input id="set-llm-base" type="text" autocomplete="off" /></label>
+          <label><span data-i18n="settings.llmToken">LLM access token</span><input id="set-llm-token" type="password" autocomplete="off" /></label>
+          <label><span data-i18n="settings.model">Model name</span><input id="set-model" type="text" autocomplete="off" /></label>
+          <label><span data-i18n="settings.jevBase">Jev base URL</span><input id="set-jev-base" type="text" autocomplete="off" /></label>
+          <label><span data-i18n="settings.jevToken">Jev access token</span><input id="set-jev-token" type="password" autocomplete="off" /></label>
+        </fieldset>
+        <fieldset>
+          <legend data-i18n="settings.behavior">行为</legend>
+          <label><span data-i18n="settings.uiLang">界面语言</span>
+            <select id="set-locale">
+              <option value="zh">简体中文</option>
+              <option value="en">English</option>
+              <option value="ja">日本語</option>
+            </select>
+          </label>
+          <label class="check"><input id="set-auto-speak" type="checkbox" /><span data-i18n="settings.autoSpeak">自动朗读</span></label>
+          <label class="check"><input id="set-thinking" type="checkbox" /><span data-i18n="settings.thinking">允许思维链</span></label>
+          <label><span data-i18n="settings.voice">角色声音（项目内置音色）</span>
+            <select id="set-voice"></select>
+          </label>
+          <label><span data-i18n="settings.ttsProvider">TTS 供应商</span>
+            <select id="set-tts-provider">
+              <option value="auto" data-i18n="provider.auto">自动（云端优先）</option>
+              <option value="mimo">MiMo</option>
+              <option value="minimax">MiniMax</option>
+              <option value="custom" data-i18n="provider.custom">自定义（OpenAI 兼容）</option>
+              <option value="browser" data-i18n="provider.browser">浏览器本地</option>
+            </select>
+          </label>
+          <label><span data-i18n="settings.asrProvider">ASR 供应商</span>
+            <select id="set-asr-provider">
+              <option value="auto" data-i18n="provider.auto">自动（云端优先）</option>
+              <option value="mimo">MiMo</option>
+              <option value="custom" data-i18n="provider.custom">自定义（OpenAI 兼容）</option>
+              <option value="browser" data-i18n="provider.browser">浏览器本地</option>
+            </select>
+          </label>
+          <label><span data-i18n="settings.voiceBase">自定义语音端点（OpenAI 兼容，base URL 与 Key，TTS/ASR 共用）</span>
+            <input id="set-voice-base" type="text" autocomplete="off" placeholder="https://your-host/v1" />
+            <input id="set-voice-token" type="password" autocomplete="off" />
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend data-i18n="settings.data">数据</legend>
+          <div class="data-actions">
+            <button id="btn-export-chat" class="ghost small" type="button" data-i18n="settings.exportChat">导出聊天记录</button>
+            <button id="btn-import-chat" class="ghost small" type="button" data-i18n="settings.importChat">导入聊天记录</button>
+            <button id="btn-export-logs" class="ghost small" type="button" data-i18n="settings.exportLogs">导出通信日志</button>
+            <input id="import-file" type="file" accept="application/json,.json" class="hidden" />
+          </div>
+        </fieldset>
+        <div class="dialog-actions">
+          <button id="btn-settings-close" class="ghost" type="button" data-i18n="settings.close">关闭</button>
+          <button id="btn-settings-save" class="primary" type="button" data-i18n="settings.save">保存并重连</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="boot-loading">
+      <div class="loading-card">
+        <div class="spinner"></div>
+        <div id="loading-text" data-i18n="loading.connect">正在连接聊天服务器…</div>
+        <div id="loading-actions" class="hidden">
+          <button id="btn-loading-retry" class="ghost" data-i18n="btn.retry">重试</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="hidden"></div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
